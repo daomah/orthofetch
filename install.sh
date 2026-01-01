@@ -8,11 +8,11 @@ mkdir -p "$BIN_DIR"
 mkdir -p "$DATA_DIR"
 
 # Download main script
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/orthofetch/main/orthofetch.py -o "$BIN_DIR/orthofetch"
+curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/orthofetch.py -o "$BIN_DIR/orthofetch"
 chmod +x "$BIN_DIR/orthofetch"
 
 # Download data files
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/orthofetch/main/data/orthodox_calendar_2026.txt -o "$DATA_DIR/orthodox_calendar_2026.txt"
+curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/data/orthodox_calendar_2026.txt -o "$DATA_DIR/orthodox_calendar_2026.txt"
 
 echo "[*] Installation complete!"
 echo "Run 'orthofetch' from anywhere."
