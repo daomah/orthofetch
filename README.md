@@ -1,6 +1,6 @@
 # orthofetch
 
-A terminal-based Orthodox calendar CLI for Linux, showing today's saints, feasts, fasting, and readings.
+A terminal-based Orthodox Christian calendar made in a "fetch" style for Linux, showing today's saints, feasts, fasting, and readings.
 
 ---
 
