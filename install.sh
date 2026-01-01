@@ -16,4 +16,5 @@ curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/data/
 
 echo "[*] Installation complete!"
 echo "Run 'orthofetch' from anywhere."
+echo "Orthofetch script intalled to $BIN_DIR."
 echo "Data installed to $DATA_DIR."
