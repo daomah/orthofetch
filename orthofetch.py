@@ -1213,7 +1213,7 @@ def main():
     parser.add_argument("--bible", nargs="*", help="Display Bible text: --bible [BOOK] [CHAPTER[:VERSE[-VERSE]]]")
     parser.add_argument("--random-verse", nargs="?", help="Display random verse: --random-verse [BOOK]")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
-    parser.add_argument("--update", action="store_true", help="Update orthofetch script and data files")
+    parser.add_argument("-u", "--update", action="store_true", help="Update orthofetch script and data files")
     
     args = parser.parse_args()
     
@@ -1231,7 +1231,7 @@ def main():
         handle_bible_command(args.bible)
     elif '--random-verse' in provided_args:
         handle_random_verse(args.random_verse)
-    elif '--update' in provided_args:
+    elif '--update' in provided_args or '-u' in sys.argv:
         handle_update()
     else:
         display_today()
