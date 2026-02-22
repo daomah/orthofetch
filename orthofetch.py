@@ -1231,7 +1231,7 @@ def main():
         handle_bible_command(args.bible)
     elif '--random-verse' in provided_args:
         handle_random_verse(args.random_verse)
-    elif '--update' in provided_args:
+    elif '--update' in provided_args or '-u' in sys.argv:
         handle_update()
     else:
         display_today()
