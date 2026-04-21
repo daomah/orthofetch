@@ -9,7 +9,7 @@ A terminal-based Orthodox Christian calendar made in a "fetch" style for Linux, 
 Run this one-liner:
 
 ```bash
-/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/install.sh)"
+/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh)"
 ```
 
 This will:
