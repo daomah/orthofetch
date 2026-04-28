@@ -13,9 +13,11 @@ curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/orthofetch.p
 chmod +x "$BIN_DIR/orthofetch"
 
 # Download calendar data if not exists
-if [ ! -f "$DATA_DIR/orthodox_calendar_2026.txt" ]; then
-    echo "Downloading calendar data..."
-    curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/data/orthodox_calendar_2026.txt -o "$DATA_DIR/orthodox_calendar_2026.txt"
+YEAR=$(date +%Y)
+CAL_FILE="orthodox_calendar_${YEAR}.txt"
+if [ ! -f "$DATA_DIR/$CAL_FILE" ]; then
+    echo "Downloading calendar data for ${YEAR}..."
+    curl -fsSL "https://raw.githubusercontent.com/daomah/orthofetch/main/data/${CAL_FILE}" -o "$DATA_DIR/$CAL_FILE"
 else
     echo "Calendar data already exists, skipping download."
 fi

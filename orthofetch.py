@@ -29,13 +29,19 @@ class Colors:
     GRAY = '\033[38;5;245m'       # Gray for subtle elements
 
 # Locate calendar file
-if os.path.exists("data/orthodox_calendar_2026.txt"):
-    CALENDAR_FILE = "data/orthodox_calendar_2026.txt"
+_year = datetime.date.today().year
+_cal_filename = f"orthodox_calendar_{_year}.txt"
+if os.path.exists(f"data/{_cal_filename}"):
+    CALENDAR_FILE = f"data/{_cal_filename}"
     BIBLE_DIR = "data/bible"
 else:
-    CALENDAR_FILE = os.path.expanduser(
-        "~/.local/share/orthofetch/orthodox_calendar_2026.txt"
-    )
+    _cal_path = os.path.expanduser(f"~/.local/share/orthofetch/{_cal_filename}")
+    if not os.path.exists(_cal_path):
+        print(
+            f"Calendar file for {_year} not found. Run 'orthofetch -u' to fetch it.",
+            file=__import__("sys").stderr,
+        )
+    CALENDAR_FILE = _cal_path
     BIBLE_DIR = os.path.expanduser("~/.local/share/orthofetch/bible")
 
 # Book name to 3-letter code mapping
