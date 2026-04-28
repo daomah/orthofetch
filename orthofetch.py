@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import textwrap
+import urllib.error
 import urllib.request
 
 # Global variable for color control
@@ -183,16 +184,15 @@ def get_last_verse_in_chapter(book_code, chapter):
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-        
-        # Find the requested chapter
+
         for chapter_data in data.get("chapters", []):
             if chapter_data.get("chapter") == chapter:
                 verses = chapter_data.get("verses", [])
                 if verses:
                     return verses[-1].get("verse", 0)
-        
+
         return 0
-    except Exception:
+    except (OSError, json.JSONDecodeError):
         return 0
 
 
@@ -334,7 +334,7 @@ def get_bible_text(book, start_chapter, start_verse, end_chapter=None, end_verse
             else:
                 return colorize_text(f"Verses {start_verse}-{end_verse} not found in {book} {start_chapter}.", Colors.GRAY)
             
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         if end_chapter > start_chapter:
             return f"Error reading {book} {start_chapter}:{start_verse}-{end_chapter}:{end_verse}: {e}"
         else:
@@ -815,7 +815,7 @@ def list_chapters(book_name):
         else:
             print(colorize_text(f"No chapters found for {book_name}.", Colors.DEEP_RED))
             
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         print(colorize_text(f"Error reading {book_name}: {e}", Colors.DEEP_RED))
 
 
@@ -1102,7 +1102,7 @@ def get_random_verse(book_name=None):
         chapter, verse = random.choice(all_verses)
         return book_name, chapter, verse, verse, None
         
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         return None, None, None, None, f"Error reading {book_name}: {e}"
 
 
@@ -1142,7 +1142,7 @@ def handle_update():
                 "https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh", timeout=30
             ) as resp:
                 script_body = resp.read()
-        except Exception as e:
+        except (urllib.error.URLError, OSError) as e:
             print(colorize_text(f"✗ Failed to fetch install script: {e}", Colors.DEEP_RED))
             return
 
@@ -1168,7 +1168,7 @@ def handle_update():
                 print(colorize_text(f"Error: {result.stderr.decode(errors='replace').strip()}", Colors.DEEP_RED))
             print(colorize_text("Please try running the update manually or check the installation.", Colors.DEEP_RED))
 
-    except Exception as e:
+    except Exception as e:  # last-resort handler for the whole update flow
         print(colorize_text(f"✗ Unexpected error during update: {str(e)}", Colors.DEEP_RED))
 
 
