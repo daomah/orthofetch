@@ -42,7 +42,7 @@ else:
 BOOK_CODES = {
     "Genesis": "GEN", "Exodus": "EXO", "Leviticus": "LEV", "Numbers": "NUM", "Deuteronomy": "DEU",
     "Joshua": "JOS", "Judges": "JDG", "Ruth": "RUT", "1 Samuel": "1SA", "2 Samuel": "2SA",
-    "1 Kings": "1KI", "2 Kings": "2KI", "1 Chronicles": "1CH", "2 Chronicles": "2CH", "Ezra": "EZR",
+    "1 Kings": "1KI", "2 Kings": "2KI", "1 Chronicles": "1CH", "2 Chronicles": "2CH",
     "Nehemiah": "NEH", "Esther": "EST", "Job": "JOB", "Psalms": "PSA", "Proverbs": "PRO",
     "Ecclesiastes": "ECC", "Song of Solomon": "SNG", "Isaiah": "ISA", "Jeremiah": "JER",
     "Lamentations": "LAM", "Ezekiel": "EZK", "Daniel": "DAN", "Hosea": "HOS", "Joel": "JOL",
@@ -55,7 +55,7 @@ BOOK_CODES = {
     "Philemon": "PHM", "Hebrews": "HEB", "James": "JAS", "1 Peter": "1PE", "2 Peter": "2PE",
     "1 John": "1JN", "2 John": "2JN", "3 John": "3JN", "Jude": "JUD", "Revelation": "REV",
     "Wisdom of Solomon": "WIS", "Sirach": "SIR", "Baruch": "BAR", "1 Maccabees": "1MA", "2 Maccabees": "2MA", "3 Maccabees": "3MA", "4 Maccabees": "4MA", "Tobit": "TOB", "Judith": "JDT", "Esther (Greek)": "ESG",
-    "Psalm 151": "P151", "Prayer of Manasseh": "MAN", "1 Esdras": "1ES", "2 Esdras": "2ES"
+    "Psalm 151": "P151", "Prayer of Manasseh": "MAN", "1 Ezra": "1ES", "2 Ezra": "2ES"
 }
 
 # Compact Orthodox Cross (will be colored with gold)
@@ -166,6 +166,8 @@ def get_last_verse_in_chapter(book_code, chapter):
         json_filename = 'wisdom'
     elif 'song' in json_filename:
         json_filename = 'songs'
+    elif 'esther_(greek)' in json_filename:
+        json_filename = 'esther_greek'
     
     json_file = os.path.join(BIBLE_DIR, f"{json_filename}.json")
     if not os.path.exists(json_file):
@@ -225,6 +227,8 @@ def get_bible_text(book, start_chapter, start_verse, end_chapter=None, end_verse
         json_filename = 'wisdom'
     elif 'song' in json_filename:
         json_filename = 'songs'
+    elif 'esther_(greek)' in json_filename:
+        json_filename = 'esther_greek'
     
     json_file = os.path.join(BIBLE_DIR, f"{json_filename}.json")
     if not os.path.exists(json_file):
@@ -685,8 +689,8 @@ def list_bible_books():
     deuterocanonical = []
     
     # Book codes and their categories
-    ot_books = ["GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA", 
-                "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
+    ot_books = ["GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+                "1KI", "2KI", "1CH", "2CH", "1ES", "2ES", "NEH", "EST", "JOB", "PSA", "PRO",
                 "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO",
                 "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL"]
     
@@ -694,7 +698,7 @@ def list_bible_books():
                 "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
                 "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"]
     
-    deut_books = ["TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "1MA", "2MA", "1ES", "2ES",
+    deut_books = ["TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "1MA", "2MA", "3MA", "4MA",
                   "MAN", "P151"]
     
     # Create reverse lookup from BOOK_CODES
@@ -713,6 +717,8 @@ def list_bible_books():
             filename = 'wisdom'
         elif 'song' in filename:
             filename = 'songs'
+        elif 'esther_(greek)' in filename:
+            filename = 'esther_greek'
         filename_to_code[filename] = code
     
     # Check which books are actually available from JSON files
@@ -779,6 +785,8 @@ def list_chapters(book_name):
         json_filename = 'wisdom'
     elif 'song' in json_filename:
         json_filename = 'songs'
+    elif 'esther_(greek)' in json_filename:
+        json_filename = 'esther_greek'
     
     json_file = os.path.join(BIBLE_DIR, f"{json_filename}.json")
     if not os.path.exists(json_file):
@@ -1038,6 +1046,8 @@ def get_random_verse(book_name=None):
             filename = 'wisdom'
         elif 'song' in filename:
             filename = 'songs'
+        elif 'esther_(greek)' in filename:
+            filename = 'esther_greek'
         filename_to_code[filename] = code
     
     # Get available books from JSON files
