@@ -78,6 +78,13 @@ orthofetch --bible [BOOK] [CHAPTER]:[VERSE]-[VERSE]
 
 This will display a range of verses (e.g., `--bible John 3:16-17`).
 
+Multi-word book names must be quoted:
+
+```bash
+orthofetch --bible "1 Kings" 3:1-5
+orthofetch --bible "Wisdom of Solomon" 7
+```
+
 ### Random Verses
 
 ```bash
