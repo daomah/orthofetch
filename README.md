@@ -109,6 +109,14 @@ This will take the color out of it making it plain text. This will also work wit
 
 ---
 
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+---
+
 ## Data
 - 
 Books come from the JSON files from [l1lsm0k13's AncientBible project](https://l1lsm0k13.github.io/AncientBible/).
