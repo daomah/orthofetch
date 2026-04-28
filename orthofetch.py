@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-import datetime
-import textwrap
-import os
 import argparse
+import datetime
+import json
+import os
+import random
 import re
-import sys
-import subprocess
 import socket
+import subprocess
+import sys
+import textwrap
+import urllib.request
 
 # Global variable for color control
 no_color = False
@@ -39,7 +42,7 @@ else:
     if not os.path.exists(_cal_path):
         print(
             f"Calendar file for {_year} not found. Run 'orthofetch -u' to fetch it.",
-            file=__import__("sys").stderr,
+            file=sys.stderr,
         )
     CALENDAR_FILE = _cal_path
     BIBLE_DIR = os.path.expanduser("~/.local/share/orthofetch/bible")
@@ -157,8 +160,6 @@ def parse_reading_reference(reference):
 
 def get_last_verse_in_chapter(book_code, chapter):
     """Get the last verse number in a chapter"""
-    import json
-    
     # Map book code to JSON filename (lowercase)
     code_to_name = {}
     for name, code in BOOK_CODES.items():
@@ -197,8 +198,6 @@ def get_last_verse_in_chapter(book_code, chapter):
 
 def get_bible_text(book, start_chapter, start_verse, end_chapter=None, end_verse=None):
     """Retrieve bible text for the specified reference. Supports cross-chapter ranges and chapter-only references."""
-    import json
-    
     # Handle backward compatibility: if end_chapter is None, assume single chapter range
     if end_chapter is None:
         end_chapter = start_chapter
@@ -684,8 +683,6 @@ def display_today():
 
 def list_bible_books():
     """Display all available Bible books"""
-    import json
-    
     print(colorize_text("Available Bible Books:", Colors.GOLD))
     print()
     
@@ -770,8 +767,6 @@ def list_bible_books():
 
 def list_chapters(book_name):
     """Display available chapters for a specific book"""
-    import json
-    
     book_code = BOOK_CODES.get(book_name)
     if not book_code:
         print(colorize_text(f"Book '{book_name}' not found.", Colors.DEEP_RED))
@@ -1036,9 +1031,6 @@ def handle_bible_command(args):
 
 def get_random_verse(book_name=None):
     """Get a random verse from the Bible"""
-    import random
-    import json
-    
     # Create filename to book code mapping
     filename_to_code = {}
     code_to_name = {}
@@ -1146,7 +1138,6 @@ def handle_update():
         
         # Execute the one-liner update command
         try:
-            import urllib.request
             with urllib.request.urlopen(
                 "https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh", timeout=30
             ) as resp:
@@ -1193,20 +1184,19 @@ def main():
     args = parser.parse_args()
     
     no_color = args.no_color
-    
-    # Check which arguments were actually provided
-    provided_args = [arg for arg in sys.argv if arg.startswith('--')]
-    
+
     if args.reading is not None:
         if args.reading <= 0:
             print(colorize_text("Reading number must be positive.", Colors.DEEP_RED))
             return
         display_reading(args.reading)
-    elif '--bible' in provided_args:
+    elif args.bible is not None:
         handle_bible_command(args.bible)
-    elif '--random-verse' in provided_args:
+    elif '--random-verse' in sys.argv:
+        # nargs='?' stores None for both "flag absent" and "flag with no value",
+        # so we must check sys.argv directly to distinguish the two cases.
         handle_random_verse(args.random_verse)
-    elif '--update' in provided_args or '-u' in sys.argv:
+    elif args.update:
         handle_update()
     else:
         display_today()
