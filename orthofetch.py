@@ -55,7 +55,6 @@ BOOK_CODES = {
     "Philemon": "PHM", "Hebrews": "HEB", "James": "JAS", "1 Peter": "1PE", "2 Peter": "2PE",
     "1 John": "1JN", "2 John": "2JN", "3 John": "3JN", "Jude": "JUD", "Revelation": "REV",
     "Wisdom of Solomon": "WIS", "Sirach": "SIR", "Baruch": "BAR", "1 Maccabees": "1MA", "2 Maccabees": "2MA", "3 Maccabees": "3MA", "4 Maccabees": "4MA", "Tobit": "TOB", "Judith": "JDT", "Esther (Greek)": "ESG",
-    "2 Maccabees": "2MA", "Tobit": "TOB", "Judith": "JDT", "Esther (Greek)": "ESG",
     "Psalm 151": "P151", "Prayer of Manasseh": "MAN", "1 Esdras": "1ES", "2 Esdras": "2ES"
 }
 
@@ -99,7 +98,7 @@ def parse_reading_reference(reference):
     reference_clean = reference.replace('.', ':')
     
     # Check for cross-chapter pattern: Book Chapter:Verse-Chapter:Verse
-    cross_chapter_pattern = r"([0-9A-Za-z\s]+)\s+(\d+)[:](\d+)[-:](\d+)[:](\d+)"
+    cross_chapter_pattern = r"([0-9A-Za-z\s]+)\s+(\d+)[:](\d+)[-:](\d+)[:](\d+)$"
     cross_match = re.match(cross_chapter_pattern, reference_clean.strip())
     
     if cross_match:
@@ -337,7 +336,7 @@ def display_reading(reading_number):
     """Display the full text of a specific reading for today"""
     today = datetime.date.today()
     calendar = parse_calendar(CALENDAR_FILE)
-    today_str = today.strftime("📅 %A, %B %-d, %Y")
+    today_str = f"📅 {today:%A, %B} {today.day}, {today.year}"
 
     entry = None
     for key in calendar:
@@ -586,20 +585,10 @@ def colorize_text(text, color):
     return f"{color}{text}{Colors.RESET}"
 
 
-def get_visible_length(text):
-    """Get the visible length of text (excluding ANSI color codes)"""
-    if no_color:
-        return len(text)
-    import re
-    # Remove ANSI escape sequences
-    clean_text = re.sub(r'\033\[[0-9;]*m', '', text)
-    return len(clean_text)
-
-
 def colorize_cross(line):
     """Apply gold color to cross elements"""
     # Replace block characters with colored versions
-    return colorize_text(line.replace('█', '█'), Colors.GOLD)
+    return colorize_text(line, Colors.GOLD)
 
 
 def colorize_field_label(label):
@@ -624,7 +613,7 @@ def colorize_field_content(content, field):
 def display_today():
     today = datetime.date.today()
     calendar = parse_calendar(CALENDAR_FILE)
-    today_str = today.strftime("📅 %A, %B %-d, %Y")
+    today_str = f"📅 {today:%A, %B} {today.day}, {today.year}"
 
     entry = None
     for key in calendar:
@@ -976,51 +965,7 @@ def parse_bible_reference(args):
                 return book, chapter, None, None
             except ValueError:
                 return None, None, None, None
-    
-    # Handle both dot and colon formats
-        if ':' in reference:
-            # Format: "1 Kings 3:1-5"
-            try:
-                chapter_part, verse_part = reference.split(':')
-                chapter = int(chapter_part)
-                if '-' in verse_part:
-                    # Range: 3:1-5
-                    start_verse, end_verse = verse_part.split('-')
-                    verse = int(start_verse)
-                    end_verse = int(end_verse)
-                    return book, chapter, verse, end_verse
-                else:
-                    # Single verse: 3:1
-                    verse = int(verse_part)
-                    return book, chapter, verse, verse
-            except ValueError:
-                return None, None, None, None
-        elif '.' in reference:
-            # Format: "1 Kings 3.1-5" - convert dot to colon
-            reference = reference.replace('.', ':')
-            try:
-                chapter_part, verse_part = reference.split(':')
-                chapter = int(chapter_part)
-                if '-' in verse_part:
-                    # Range: 3:1-5
-                    start_verse, end_verse = verse_part.split('-')
-                    verse = int(start_verse)
-                    end_verse = int(end_verse)
-                    return book, chapter, verse, end_verse
-                else:
-                    # Single verse: 3:1
-                    verse = int(verse_part)
-                    return book, chapter, verse, verse
-            except ValueError:
-                return None, None, None, None
-        else:
-            # Book and chapter only (e.g., "1 Kings 3")
-            try:
-                chapter = int(remaining_args[-1])  # Last argument should be chapter
-                return book, chapter, None, None
-            except ValueError:
-                return None, None, None, None
-    
+
     return None, None, None, None
 
 
@@ -1161,7 +1106,7 @@ def handle_random_verse(book_name=None):
         print(colorize_text(error, Colors.DEEP_RED))
         return
     
-    text = get_bible_text(book_name, chapter, verse, end_verse)
+    text = get_bible_text(book_name, chapter, verse, chapter, verse)
     print(text)
 
 
@@ -1184,13 +1129,27 @@ def handle_update():
         print()
         
         # Execute the one-liner update command
-        result = subprocess.run(
-            '/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh)"',
-            shell=True,
-            capture_output=True,
-            text=True
-        )
-        
+        try:
+            import urllib.request
+            with urllib.request.urlopen(
+                "https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh", timeout=30
+            ) as resp:
+                script_body = resp.read()
+        except Exception as e:
+            print(colorize_text(f"✗ Failed to fetch install script: {e}", Colors.DEEP_RED))
+            return
+
+        try:
+            result = subprocess.run(
+                ["sh"],
+                input=script_body,
+                capture_output=True,
+                timeout=600,
+            )
+        except subprocess.TimeoutExpired:
+            print(colorize_text("✗ Update timed out after 10 minutes.", Colors.DEEP_RED))
+            return
+
         if result.returncode == 0:
             print()
             print(colorize_text("✓ Update completed successfully!", Colors.GREEN))
@@ -1199,9 +1158,9 @@ def handle_update():
             print()
             print(colorize_text("✗ Update failed", Colors.DEEP_RED))
             if result.stderr:
-                print(colorize_text(f"Error: {result.stderr.strip()}", Colors.DEEP_RED))
+                print(colorize_text(f"Error: {result.stderr.decode(errors='replace').strip()}", Colors.DEEP_RED))
             print(colorize_text("Please try running the update manually or check the installation.", Colors.DEEP_RED))
-            
+
     except Exception as e:
         print(colorize_text(f"✗ Unexpected error during update: {str(e)}", Colors.DEEP_RED))
 
