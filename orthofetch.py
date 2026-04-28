@@ -92,7 +92,15 @@ CROSS_WIDTH = max(len(line) for line in ORTHODOX_CROSS)
 
 
 def bible_filename(book_name: str) -> str:
-    """Return the JSON filename stem for a book name (without .json extension)."""
+    """Return the JSON filename stem for a book name (without .json extension).
+
+    >>> bible_filename("1 Kings")
+    '1kings'
+    >>> bible_filename("Wisdom of Solomon")
+    'wisdom'
+    >>> bible_filename("Esther (Greek)")
+    'esther_greek'
+    """
     stem = book_name.lower().replace(' ', '_').replace('of_solomon', '')
     if stem.startswith(('1_', '2_', '3_')):
         return stem.replace('_', '')
@@ -105,7 +113,7 @@ def bible_filename(book_name: str) -> str:
     return stem
 
 
-def _parse_chapter_verse(ref: str) -> tuple:
+def _parse_chapter_verse(ref: str) -> tuple[int, int, int]:
     """Parse 'chapter:verse[-end]' or 'chapter.verse[-end]'.
 
     Returns (chapter, start_verse, end_verse). Raises ValueError on bad input.
@@ -120,13 +128,14 @@ def _parse_chapter_verse(ref: str) -> tuple:
     return chapter, v, v
 
 
-def parse_reading_reference(reference):
-    """Parse a reading reference like 'Genesis 3:1-8', 'John 10:9', 'Exodus 15.22-16.1', '3[1] Kings 2.6-14', 'Numbers 8', 'Exodus 12, 13'
-    
-    Returns:
-        None if parsing fails
-        Tuple of (book, start_chapter, start_verse, end_chapter, end_verse)
-        Always returns 5 elements for consistency
+def parse_reading_reference(reference: str) -> tuple[str, int, int | None, int, int | None] | None:
+    """Parse a calendar reading reference string.
+
+    Handles formats: 'Genesis 3:1-8', 'Exodus 15.22-16.1', '3[1] Kings 2.6-14',
+    'Numbers 8', 'Exodus 12, 13'.
+
+    Returns None on failure, or (book, start_chapter, start_verse, end_chapter, end_verse)
+    where start_verse/end_verse may be None for chapter-only references.
     """
     # Handle special case for Wisdom of Solomon
     if reference.startswith('Wisdom ') and not reference.startswith('Wisdom of '):
@@ -190,7 +199,7 @@ def parse_reading_reference(reference):
     return None
 
 
-def get_last_verse_in_chapter(book_code, chapter):
+def get_last_verse_in_chapter(book_code: str, chapter: int) -> int:
     """Get the last verse number in a chapter"""
     book_name = CODE_TO_NAME.get(book_code, book_code)
     json_file = os.path.join(BIBLE_DIR, f"{bible_filename(book_name)}.json")
@@ -212,7 +221,13 @@ def get_last_verse_in_chapter(book_code, chapter):
         return 0
 
 
-def get_bible_text(book, start_chapter, start_verse, end_chapter=None, end_verse=None):
+def get_bible_text(
+    book: str,
+    start_chapter: int,
+    start_verse: int | None,
+    end_chapter: int | None = None,
+    end_verse: int | None = None,
+) -> str:
     """Retrieve bible text for the specified reference. Supports cross-chapter ranges and chapter-only references."""
     # Handle backward compatibility: if end_chapter is None, assume single chapter range
     if end_chapter is None:
@@ -770,7 +785,7 @@ def list_chapters(book_name):
         print(colorize_text(f"Error reading {book_name}: {e}", Colors.DEEP_RED))
 
 
-def parse_bible_reference(args):
+def parse_bible_reference(args: list[str]) -> tuple[str | None, int | None, int | None, int | None]:
     """Parse Bible reference from command line arguments.
 
     Returns (book, chapter, start_verse, end_verse); any element may be None.
@@ -861,7 +876,7 @@ def handle_bible_command(args):
         print("  --bible John 3:16-17               # Show John 3:16-17")
 
 
-def get_random_verse(book_name=None):
+def get_random_verse(book_name: str | None = None) -> tuple[str | None, int | None, int | None, int | None, str | None]:
     """Get a random verse from the Bible"""
     filename_to_code = {bible_filename(name): code for name, code in BOOK_CODES.items()}
 
