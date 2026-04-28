@@ -1150,22 +1150,18 @@ def handle_update():
             result = subprocess.run(
                 ["sh"],
                 input=script_body,
-                capture_output=True,
                 timeout=600,
             )
         except subprocess.TimeoutExpired:
             print(colorize_text("✗ Update timed out after 10 minutes.", Colors.DEEP_RED))
             return
 
+        print()
         if result.returncode == 0:
-            print()
             print(colorize_text("✓ Update completed successfully!", Colors.GREEN))
             print(colorize_text("Orthofetch has been updated to the latest version.", Colors.GREEN))
         else:
-            print()
             print(colorize_text("✗ Update failed", Colors.DEEP_RED))
-            if result.stderr:
-                print(colorize_text(f"Error: {result.stderr.decode(errors='replace').strip()}", Colors.DEEP_RED))
             print(colorize_text("Please try running the update manually or check the installation.", Colors.DEEP_RED))
 
     except Exception as e:  # last-resort handler for the whole update flow
