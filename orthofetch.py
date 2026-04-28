@@ -1185,7 +1185,7 @@ def handle_update():
         
         # Execute the one-liner update command
         result = subprocess.run(
-            '/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/install.sh)"',
+            '/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/install.sh)"',
             shell=True,
             capture_output=True,
             text=True

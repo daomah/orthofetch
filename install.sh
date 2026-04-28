@@ -9,13 +9,13 @@ mkdir -p "$DATA_DIR"
 
 # Download main script (always update to get latest version)
 echo "Downloading orthofetch script..."
-curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/orthofetch.py -o "$BIN_DIR/orthofetch"
+curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/orthofetch.py -o "$BIN_DIR/orthofetch"
 chmod +x "$BIN_DIR/orthofetch"
 
 # Download calendar data if not exists
 if [ ! -f "$DATA_DIR/orthodox_calendar_2026.txt" ]; then
     echo "Downloading calendar data..."
-    curl -fsSL https://raw.githubusercontent.com/roguehashrate/orthofetch/main/data/orthodox_calendar_2026.txt -o "$DATA_DIR/orthodox_calendar_2026.txt"
+    curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/data/orthodox_calendar_2026.txt -o "$DATA_DIR/orthodox_calendar_2026.txt"
 else
     echo "Calendar data already exists, skipping download."
 fi
@@ -39,7 +39,7 @@ download_bible_book() {
     local book_code=$1
     local book_name=$2
     local json_filename=$3
-    local url="https://raw.githubusercontent.com/roguehashrate/orthofetch/main/data/bible/$json_filename"
+    local url="https://raw.githubusercontent.com/daomah/orthofetch/main/data/bible/$json_filename"
     local file="$BIBLE_DIR/$json_filename"
     
     # Check if file already exists
