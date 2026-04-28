@@ -1,0 +1,1 @@
+# orthofetch has no third-party dependencies; all imports are from the Python standard library.
