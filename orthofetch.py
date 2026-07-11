@@ -16,12 +16,14 @@ import urllib.request
 no_color = False
 
 # Color scheme for Orthodox Christian theme
+
+
 class Colors:
     # ANSI color codes
     RESET = '\033[0m'
     BOLD = '\033[1m'
     DIM = '\033[2m'
-    
+
     # Colors
     GOLD = '\033[38;5;214m'      # Gold for cross and special elements
     DEEP_RED = '\033[38;5;88m'    # Deep red for feast days
@@ -32,6 +34,7 @@ class Colors:
     WHITE = '\033[38;5;255m'      # White for text
     GRAY = '\033[38;5;245m'       # Gray for subtle elements
 
+
 # Locate calendar file
 _year = datetime.date.today().year
 _cal_filename = f"orthodox_calendar_{_year}.txt"
@@ -39,7 +42,8 @@ if os.path.exists(f"data/{_cal_filename}"):
     CALENDAR_FILE = f"data/{_cal_filename}"
     BIBLE_DIR = "data/bible"
 else:
-    _cal_path = os.path.expanduser(f"~/.local/share/orthofetch/{_cal_filename}")
+    _cal_path = os.path.expanduser(
+        f"~/.local/share/orthofetch/{_cal_filename}")
     if not os.path.exists(_cal_path):
         print(
             f"Calendar file for {_year} not found. Run 'orthofetch -u' to fetch it.",
@@ -64,7 +68,8 @@ BOOK_CODES = {
     "2 Thessalonians": "2TH", "1 Timothy": "1TI", "2 Timothy": "2TI", "Titus": "TIT",
     "Philemon": "PHM", "Hebrews": "HEB", "James": "JAS", "1 Peter": "1PE", "2 Peter": "2PE",
     "1 John": "1JN", "2 John": "2JN", "3 John": "3JN", "Jude": "JUD", "Revelation": "REV",
-    "Wisdom of Solomon": "WIS", "Sirach": "SIR", "Baruch": "BAR", "1 Maccabees": "1MA", "2 Maccabees": "2MA", "3 Maccabees": "3MA", "4 Maccabees": "4MA", "Tobit": "TOB", "Judith": "JDT", "Esther (Greek)": "ESG",
+    "Wisdom of Solomon": "WIS", "Sirach": "SIR", "Baruch": "BAR", "1 Maccabees": "1MA", "2 Maccabees": "2MA",
+    "3 Maccabees": "3MA", "4 Maccabees": "4MA", "Tobit": "TOB", "Judith": "JDT", "Esther (Greek)": "ESG",
     "Psalm 151": "P151", "Prayer of Manasseh": "MAN", "1 Ezra": "1ES", "2 Ezra": "2ES"
 }
 
@@ -73,7 +78,7 @@ CODE_TO_NAME = {code: name for name, code in BOOK_CODES.items()}
 # Compact Orthodox Cross (will be colored with gold)
 ORTHODOX_CROSS = [
     "      ██",
-    "    ██████", 
+    "    ██████",
     "      ██",
     "  ██████████",
     "      ██",
@@ -140,62 +145,62 @@ def parse_reading_reference(reference: str) -> tuple[str, int, int | None, int, 
     # Handle special case for Wisdom of Solomon
     if reference.startswith('Wisdom ') and not reference.startswith('Wisdom of '):
         reference = 'Wisdom of Solomon' + reference[6:]
-    
+
     # Handle special format like "3[1] Kings 2.6-14" - extract the second number in brackets
     reference = re.sub(r'(\d+)\[(\d+)\]\s+Kings', r'\2 Kings', reference)
-    
+
     # Convert dots to colons for consistency (but keep original for parsing cross-chapter ranges)
     reference_clean = reference.replace('.', ':')
-    
+
     # Check for cross-chapter pattern: Book Chapter:Verse-Chapter:Verse
     cross_chapter_pattern = r"([0-9A-Za-z\s]+)\s+(\d+)[:](\d+)[-:](\d+)[:](\d+)$"
     cross_match = re.match(cross_chapter_pattern, reference_clean.strip())
-    
+
     if cross_match:
         book = cross_match.group(1).strip()
         start_chapter = int(cross_match.group(2))
         start_verse = int(cross_match.group(3))
         end_chapter = int(cross_match.group(4))
         end_verse = int(cross_match.group(5))
-        
+
         return book, start_chapter, start_verse, end_chapter, end_verse
-    
+
     # Pattern to match: Book Chapter:Verse-Verse or Book Chapter:Verse (single chapter)
     single_chapter_pattern = r"([0-9A-Za-z\s]+)\s+(\d+)[:](\d+)(?:[-:]?(\d+))?"
     match = re.match(single_chapter_pattern, reference_clean.strip())
-    
+
     if match:
         book = match.group(1).strip()
         chapter = int(match.group(2))
         start_verse = int(match.group(3))
         end_verse = int(match.group(4)) if match.group(4) else start_verse
-        
+
         # Return in 5-tuple format for consistency (start_chapter = end_chapter)
         return book, chapter, start_verse, chapter, end_verse
-    
+
     # Pattern to match: Book Chapter (no verses)
     chapter_only_pattern = r"([0-9A-Za-z\s]+)\s+(\d+)$"
     chapter_match = re.match(chapter_only_pattern, reference.strip())
-    
+
     if chapter_match:
         book = chapter_match.group(1).strip()
         chapter = int(chapter_match.group(2))
-        
+
         # Return chapter-only reference - verse range will be determined later
         return book, chapter, None, chapter, None
-    
+
     # Pattern to match: Book Chapter, Chapter (comma-separated chapters)
     comma_chapter_pattern = r"([0-9A-Za-z\s]+)\s+(\d+),\s*(\d+)$"
     comma_chapter_match = re.match(comma_chapter_pattern, reference.strip())
-    
+
     if comma_chapter_match:
         book = comma_chapter_match.group(1).strip()
         start_chapter = int(comma_chapter_match.group(2))
         end_chapter = int(comma_chapter_match.group(3))
-        
+
         # Return cross-chapter reference with no verses
         return book, start_chapter, None, end_chapter, None
-    
+
     return None
 
 
@@ -205,7 +210,7 @@ def get_last_verse_in_chapter(book_code: str, chapter: int) -> int:
     json_file = os.path.join(BIBLE_DIR, f"{bible_filename(book_name)}.json")
     if not os.path.exists(json_file):
         return 0
-    
+
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -234,7 +239,7 @@ def get_bible_text(
         end_chapter = start_chapter
         if end_verse is None:
             end_verse = start_verse
-    
+
     # Handle chapter-only references - get entire chapter(s)
     if start_verse is None:
         start_verse = 1
@@ -245,7 +250,7 @@ def get_bible_text(
             end_verse = get_last_verse_in_chapter(book_code, end_chapter)
         else:
             end_verse = 1
-    
+
     book_code = BOOK_CODES.get(book)
     if not book_code:
         return f"Book '{book}' not found."
@@ -253,14 +258,15 @@ def get_bible_text(
     json_file = os.path.join(BIBLE_DIR, f"{bible_filename(book)}.json")
     if not os.path.exists(json_file):
         return f"Book {book} not found."
-    
+
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-        
-        all_chapters = {ch.get("chapter"): ch for ch in data.get("chapters", [])}
+
+        all_chapters = {
+            ch.get("chapter"): ch for ch in data.get("chapters", [])}
         result_lines = []
-        
+
         # Handle cross-chapter range
         if end_chapter > start_chapter:
             # First chapter: from start_verse to end of chapter
@@ -271,7 +277,7 @@ def get_bible_text(
                     if verse_num >= start_verse:
                         verse_text = verse_obj.get("text", "")
                         result_lines.append(f"{verse_num} {verse_text}")
-            
+
             # Middle chapters: all verses
             for chapter_num in range(start_chapter + 1, end_chapter):
                 middle_chapter = all_chapters.get(chapter_num)
@@ -280,7 +286,7 @@ def get_bible_text(
                         verse_num = verse_obj.get("verse", 0)
                         verse_text = verse_obj.get("text", "")
                         result_lines.append(f"{verse_num} {verse_text}")
-            
+
             # Last chapter: from verse 1 to end_verse
             last_chapter = all_chapters.get(end_chapter)
             if last_chapter:
@@ -294,14 +300,14 @@ def get_bible_text(
             chapter_data = all_chapters.get(start_chapter)
             if not chapter_data:
                 return f"Chapter {start_chapter} of {book} not found."
-            
+
             verses = chapter_data.get("verses", [])
             for verse_obj in verses:
                 verse_num = verse_obj.get("verse", 0)
                 if start_verse <= verse_num <= end_verse:
                     verse_text = verse_obj.get("text", "")
                     result_lines.append(f"{verse_num} {verse_text}")
-        
+
         if result_lines:
             # Create appropriate header
             if end_chapter > start_chapter:
@@ -322,7 +328,7 @@ def get_bible_text(
                     header = f"{book} {start_chapter}:{start_verse}"
                     if end_verse != start_verse:
                         header += f"-{end_verse}"
-            
+
             # Colorize the header
             colored_header = colorize_text(header, Colors.GOLD)
             colored_verses = []
@@ -334,21 +340,25 @@ def get_bible_text(
                         verse_num = verse[:space_pos]
                         verse_text = verse[space_pos+1:]
                         colored_verses.append(
-                            colorize_text(verse_num, Colors.CYAN) + " " + 
+                            colorize_text(verse_num, Colors.CYAN) + " " +
                             colorize_text(verse_text, Colors.WHITE)
                         )
                     else:
-                        colored_verses.append(colorize_text(verse, Colors.WHITE))
+                        colored_verses.append(
+                            colorize_text(verse, Colors.WHITE))
                 else:
                     colored_verses.append(colorize_text(verse, Colors.WHITE))
-            
+
             return f"\n{colored_header}\n" + "\n".join(colored_verses)
         else:
             if end_chapter > start_chapter:
-                return colorize_text(f"Verses {start_chapter}:{start_verse}-{end_chapter}:{end_verse} not found in {book}.", Colors.GRAY)
+                return colorize_text(
+                    f"Verses {start_chapter}:{start_verse}-{end_chapter}:{end_verse} not found in {book}.",
+                    Colors.GRAY)
             else:
-                return colorize_text(f"Verses {start_verse}-{end_verse} not found in {book} {start_chapter}.", Colors.GRAY)
-            
+                return colorize_text(
+                    f"Verses {start_verse}-{end_verse} not found in {book} {start_chapter}.", Colors.GRAY)
+
     except (OSError, json.JSONDecodeError) as e:
         if end_chapter > start_chapter:
             return f"Error reading {book} {start_chapter}:{start_verse}-{end_chapter}:{end_verse}: {e}"
@@ -379,7 +389,7 @@ def display_reading(reading_number):
 
     # Split readings by " • " first
     readings = [r.strip() for r in readings_text.split(" • ") if r.strip()]
-    
+
     # Filter out "Composite X - " prefix and handle complex formats
     clean_readings = []
     for reading in readings:
@@ -393,29 +403,34 @@ def display_reading(reading_number):
                 for part in semicolon_parts:
                     if part:
                         # Then split by • within each semicolon part
-                        sub_parts = [r.strip() for r in part.split(" • ") if r.strip()]
+                        sub_parts = [r.strip()
+                                     for r in part.split(" • ") if r.strip()]
                         clean_readings.extend(sub_parts)
             else:
                 # Split by • as before
-                sub_parts = [r.strip() for r in clean_reading.split(" • ") if r.strip()]
+                sub_parts = [r.strip()
+                             for r in clean_reading.split(" • ") if r.strip()]
                 clean_readings.extend(sub_parts)
         else:
             clean_readings.append(reading)
-    
+
     # Filter out any empty entries
     clean_readings = [r for r in clean_readings if r and not r.isdigit()]
 
     try:
         reading_idx = int(reading_number) - 1
         if reading_idx < 0 or reading_idx >= len(clean_readings):
-            print(colorize_text(f"Reading number {reading_number} not found. There are {len(clean_readings)} readings today.", Colors.DEEP_RED))
+            print(colorize_text(
+                f"Reading number {reading_number} not found. "
+                f"There are {len(clean_readings)} readings today.", Colors.DEEP_RED))
             print(colorize_text("Available readings:", Colors.CYAN))
             for i, reading in enumerate(clean_readings, 1):
-                print(f"  {colorize_text(str(i), Colors.GOLD)}. {colorize_text(reading, Colors.PURPLE)}")
+                print(
+                    f"  {colorize_text(str(i), Colors.GOLD)}. {colorize_text(reading, Colors.PURPLE)}")
             return
 
         reading_ref = clean_readings[reading_idx]
-        
+
         # Handle multiple verse ranges separated by commas
         if ',' in reading_ref:
             # Try to parse as single reference first (for cases like "Exodus 12, 13")
@@ -423,21 +438,24 @@ def display_reading(reading_number):
             if single_parsed and single_parsed[2] is None and single_parsed[4] is None:
                 # This is a comma-separated chapter reference (like "Exodus 12, 13")
                 book, start_chapter, start_verse, end_chapter, end_verse = single_parsed
-                text = get_bible_text(book, start_chapter, start_verse, end_chapter, end_verse)
+                text = get_bible_text(
+                    book, start_chapter, start_verse, end_chapter, end_verse)
                 print(text)
                 return
-            
+
             # If single parsing failed, try multi-part parsing
             parts = [p.strip() for p in reading_ref.split(',')]
             parsed_references = []
             book = None
-            
+
             for part in parts:
                 if ':' in part or '.' in part:
                     # Check if this looks like a full reference (has book name) or just chapter.verses
                     # A full book reference like "1 Peter 1.1-2" will have space(s) after the book name
-                    # A simple chapter.verse reference like "3.4-7" or "3:4-7" will not have spaces before the first . or :
-                    has_book_name = re.search(r'\d+[A-Za-z\s]+\d+[.:]', part) is not None
+                    # A simple chapter.verse reference like "3.4-7" or "3:4-7" will not
+                    # have spaces before the first . or :
+                    has_book_name = re.search(
+                        r'\d+[A-Za-z\s]+\d+[.:]', part) is not None
                     if part[0].isdigit() and ('.' in part or ':' in part) and not has_book_name:
                         # This looks like "3.4-7" (chapter.verses without book)
                         if parsed_references:
@@ -448,24 +466,32 @@ def display_reading(reading_number):
                                     chapter_part, verse_part = part.split('.')
                                     chapter = int(chapter_part)
                                     if '-' in verse_part:
-                                        start_verse, end_verse = verse_part.split('-')
-                                        parsed_references.append((current_book, chapter, int(start_verse), chapter, int(end_verse)))
+                                        start_verse, end_verse = verse_part.split(
+                                            '-')
+                                        parsed_references.append(
+                                            (current_book, chapter, int(start_verse), chapter, int(end_verse)))
                                     else:
-                                        parsed_references.append((current_book, chapter, int(verse_part), chapter, int(verse_part)))
+                                        parsed_references.append(
+                                            (current_book, chapter, int(verse_part), chapter, int(verse_part)))
                                 else:
                                     # Handle "3:4-7" format
                                     chapter_part, verse_part = part.split(':')
                                     chapter = int(chapter_part)
                                     if '-' in verse_part:
-                                        start_verse, end_verse = verse_part.split('-')
-                                        parsed_references.append((current_book, chapter, int(start_verse), chapter, int(end_verse)))
+                                        start_verse, end_verse = verse_part.split(
+                                            '-')
+                                        parsed_references.append(
+                                            (current_book, chapter, int(start_verse), chapter, int(end_verse)))
                                     else:
-                                        parsed_references.append((current_book, chapter, int(verse_part), chapter, int(verse_part)))
+                                        parsed_references.append(
+                                            (current_book, chapter, int(verse_part), chapter, int(verse_part)))
                             except ValueError:
-                                print(colorize_text(f"Could not parse chapter.verse reference: {part}", Colors.DEEP_RED))
+                                print(colorize_text(
+                                    f"Could not parse chapter.verse reference: {part}", Colors.DEEP_RED))
                                 return
                         else:
-                            print(colorize_text(f"Could not determine book for reference: {part}", Colors.DEEP_RED))
+                            print(colorize_text(
+                                f"Could not determine book for reference: {part}", Colors.DEEP_RED))
                             return
                     else:
                         # Full reference with book name
@@ -474,9 +500,11 @@ def display_reading(reading_number):
                             current_book, start_chapter, start_verse, end_chapter, end_verse = range_parsed
                             if book is None:
                                 book = current_book
-                            parsed_references.append((current_book, start_chapter, start_verse, end_chapter, end_verse))
+                            parsed_references.append(
+                                (current_book, start_chapter, start_verse, end_chapter, end_verse))
                         else:
-                            print(colorize_text(f"Could not parse reading reference: {part}", Colors.DEEP_RED))
+                            print(colorize_text(
+                                f"Could not parse reading reference: {part}", Colors.DEEP_RED))
                             return
                 else:
                     # Just verse range - use book and chapter from first parsed part
@@ -485,33 +513,41 @@ def display_reading(reading_number):
                         if '-' in part:
                             try:
                                 start_verse, end_verse = part.split('-')
-                                parsed_references.append((current_book, start_chapter, int(start_verse), start_chapter, int(end_verse)))
+                                parsed_references.append((current_book, start_chapter, int(
+                                    start_verse), start_chapter, int(end_verse)))
                             except ValueError:
-                                print(colorize_text(f"Could not parse verse range: {part}", Colors.DEEP_RED))
+                                print(colorize_text(
+                                    f"Could not parse verse range: {part}", Colors.DEEP_RED))
                                 return
                         else:
                             try:
-                                parsed_references.append((current_book, start_chapter, int(part), start_chapter, int(part)))
+                                parsed_references.append(
+                                    (current_book, start_chapter, int(part), start_chapter, int(part)))
                             except ValueError:
-                                print(colorize_text(f"Could not parse verse: {part}", Colors.DEEP_RED))
+                                print(colorize_text(
+                                    f"Could not parse verse: {part}", Colors.DEEP_RED))
                                 return
                     else:
-                        print(colorize_text(f"Could not determine book for verse range: {part}", Colors.DEEP_RED))
+                        print(colorize_text(
+                            f"Could not determine book for verse range: {part}", Colors.DEEP_RED))
                         return
-            
+
             for ref_book, start_chapter, start_verse, end_chapter, end_verse in parsed_references:
-                print(get_bible_text(ref_book, start_chapter, start_verse, end_chapter, end_verse))
+                print(get_bible_text(ref_book, start_chapter,
+                      start_verse, end_chapter, end_verse))
         else:
             # Single range - existing logic
             parsed = parse_reading_reference(reading_ref)
-            
+
             if parsed:
                 book, start_chapter, start_verse, end_chapter, end_verse = parsed
-                text = get_bible_text(book, start_chapter, start_verse, end_chapter, end_verse)
+                text = get_bible_text(
+                    book, start_chapter, start_verse, end_chapter, end_verse)
                 print(text)
             else:
-                print(colorize_text(f"Could not parse reading reference: {reading_ref}", Colors.DEEP_RED))
-            
+                print(colorize_text(
+                    f"Could not parse reading reference: {reading_ref}", Colors.DEEP_RED))
+
     except ValueError:
         print("Please provide a valid reading number (e.g., --reading 1)")
 
@@ -542,7 +578,7 @@ def wrap_readings(text, width):
     # Parse the readings the same way as display_reading to get clean list
     readings = [r.strip() for r in text.split(" • ") if r.strip()]
     clean_readings = []
-    
+
     for reading in readings:
         if reading.startswith("Composite"):
             # Remove "Composite X - " prefix
@@ -554,25 +590,28 @@ def wrap_readings(text, width):
                 for part in semicolon_parts:
                     if part:
                         # Then split by • within each semicolon part
-                        sub_parts = [r.strip() for r in part.split(" • ") if r.strip()]
+                        sub_parts = [r.strip()
+                                     for r in part.split(" • ") if r.strip()]
                         clean_readings.extend(sub_parts)
             else:
                 # Split by • as before
-                sub_parts = [r.strip() for r in clean_reading.split(" • ") if r.strip()]
+                sub_parts = [r.strip()
+                             for r in clean_reading.split(" • ") if r.strip()]
                 clean_readings.extend(sub_parts)
         else:
             clean_readings.append(reading)
-    
+
     # Clean up Kings book format for display
     for i in range(len(clean_readings)):
         # Convert "3[1] Kings" to "1 Kings" for display
-        clean_readings[i] = re.sub(r'\d+\[(\d+)\]\s+Kings', r'\1 Kings', clean_readings[i])
-    
+        clean_readings[i] = re.sub(
+            r'\d+\[(\d+)\]\s+Kings', r'\1 Kings', clean_readings[i])
+
     # Filter out any empty entries
     clean_readings = [r for r in clean_readings if r and not r.isdigit()]
-    
+
     lines = []
-    
+
     for i, reading in enumerate(clean_readings, 1):
         # Add number prefix: [1] reading
         numbered_reading = f"[{i}] {reading}"
@@ -659,21 +698,23 @@ def display_today():
                 if cross_index < cross_height
                 else " " * CROSS_WIDTH
             )
-            
+
             # Build the raw line first (without colors)
             if i == 0:
                 raw_label = field.ljust(MAX_FIELD_WIDTH)
             else:
                 raw_label = " " * MAX_FIELD_WIDTH
-            
+
             raw_content = line if line else ""
-            raw_line = f"{raw_cross_part.ljust(CROSS_WIDTH)}{' ' * TEXT_GAP}{raw_label} {raw_content}"
-            
+
             # Now colorize the parts
-            colored_cross = colorize_cross(raw_cross_part).ljust(CROSS_WIDTH + len(colorize_cross(raw_cross_part)) - len(raw_cross_part))
-            colored_label = colorize_field_label(raw_label) if i == 0 else raw_label
-            colored_content = colorize_field_content(raw_content, field) if raw_content else ""
-            
+            colored_cross = colorize_cross(raw_cross_part).ljust(
+                CROSS_WIDTH + len(colorize_cross(raw_cross_part)) - len(raw_cross_part))
+            colored_label = colorize_field_label(
+                raw_label) if i == 0 else raw_label
+            colored_content = colorize_field_content(
+                raw_content, field) if raw_content else ""
+
             # Combine with correct spacing
             print(f"{colored_cross}{' ' * TEXT_GAP}{colored_label} {colored_content}")
 
@@ -688,26 +729,27 @@ def list_bible_books():
     """Display all available Bible books"""
     print(colorize_text("Available Bible Books:", Colors.GOLD))
     print()
-    
+
     # Group books by testament and type for better organization
     old_testament = []
     new_testament = []
     deuterocanonical = []
-    
+
     # Book codes and their categories
     ot_books = ["GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
                 "1KI", "2KI", "1CH", "2CH", "1ES", "2ES", "NEH", "EST", "JOB", "PSA", "PRO",
                 "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO",
                 "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL"]
-    
+
     nt_books = ["MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
                 "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
                 "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"]
-    
+
     deut_books = ["TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "1MA", "2MA", "3MA", "4MA",
                   "MAN", "P151"]
-    
-    filename_to_code = {bible_filename(name): code for name, code in BOOK_CODES.items()}
+
+    filename_to_code = {bible_filename(
+        name): code for name, code in BOOK_CODES.items()}
 
     available_codes = []
     if os.path.exists(BIBLE_DIR):
@@ -726,21 +768,21 @@ def list_bible_books():
                 new_testament.append(book_name)
             elif code in deut_books:
                 deuterocanonical.append(book_name)
-    
+
     # Display Old Testament
     if old_testament:
         print(colorize_text("Old Testament:", Colors.DEEP_RED))
         for i, book in enumerate(old_testament, 1):
             print(f"  {colorize_text(str(i).ljust(2), Colors.CYAN)} {book}")
         print()
-    
+
     # Display New Testament
     if new_testament:
         print(colorize_text("New Testament:", Colors.BLUE))
         for i, book in enumerate(new_testament, len(old_testament) + 1):
             print(f"  {colorize_text(str(i).ljust(2), Colors.CYAN)} {book}")
         print()
-    
+
     # Display Deuterocanonical
     if deuterocanonical:
         print(colorize_text("Deuterocanonical:", Colors.PURPLE))
@@ -757,32 +799,40 @@ def list_chapters(book_name):
 
     json_file = os.path.join(BIBLE_DIR, f"{bible_filename(book_name)}.json")
     if not os.path.exists(json_file):
-        print(colorize_text(f"Book file for {book_name} not found.", Colors.DEEP_RED))
+        print(colorize_text(
+            f"Book file for {book_name} not found.", Colors.DEEP_RED))
         return
-    
+
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-        
-        chapters = [ch.get("chapter", 0) for ch in data.get("chapters", []) if ch.get("chapter")]
-        
+
+        chapters = [ch.get("chapter", 0)
+                    for ch in data.get("chapters", []) if ch.get("chapter")]
+
         if chapters:
-            print(colorize_text(f"Available chapters in {book_name}:", Colors.GOLD))
+            print(colorize_text(
+                f"Available chapters in {book_name}:", Colors.GOLD))
             print()
-            
+
             # Display chapters in rows of 10
             for i in range(0, len(chapters), 10):
                 row_chapters = chapters[i:i+10]
-                chapter_strs = [colorize_text(str(ch), Colors.CYAN) for ch in row_chapters]
+                chapter_strs = [colorize_text(
+                    str(ch), Colors.CYAN) for ch in row_chapters]
                 print("  " + "  ".join(chapter_strs))
-            
+
             print(f"\nTotal chapters: {len(chapters)}")
-            print(colorize_text(f"Example usage: --bible {book_name} {chapters[0]} or --bible {book_name} {chapters[0]}:1", Colors.GRAY))
+            print(colorize_text(
+                f"Example usage: --bible {book_name} {chapters[0]} "
+                f"or --bible {book_name} {chapters[0]}:1", Colors.GRAY))
         else:
-            print(colorize_text(f"No chapters found for {book_name}.", Colors.DEEP_RED))
-            
+            print(colorize_text(
+                f"No chapters found for {book_name}.", Colors.DEEP_RED))
+
     except (OSError, json.JSONDecodeError) as e:
-        print(colorize_text(f"Error reading {book_name}: {e}", Colors.DEEP_RED))
+        print(colorize_text(
+            f"Error reading {book_name}: {e}", Colors.DEEP_RED))
 
 
 def parse_bible_reference(args: list[str]) -> tuple[str | None, int | None, int | None, int | None]:
@@ -830,7 +880,7 @@ def handle_bible_command(args):
     if not args:
         list_bible_books()
         return
-    
+
     # Check for cross-chapter range format like "Job 2:13-4:3"
     if len(args) >= 2 and '-' in args[1] and ':' in args[1]:
         dash_pos = args[1].find('-')
@@ -840,12 +890,13 @@ def handle_bible_command(args):
             parsed = parse_reading_reference(full_reference)
             if parsed:
                 book, start_chapter, start_verse, end_chapter, end_verse = parsed
-                text = get_bible_text(book, start_chapter, start_verse, end_chapter, end_verse)
+                text = get_bible_text(
+                    book, start_chapter, start_verse, end_chapter, end_verse)
                 print(text)
                 return
-    
+
     book, chapter, start_verse, end_verse = parse_bible_reference(args)
-    
+
     if book and chapter is None:
         # List chapters for this book
         list_chapters(book)
@@ -857,14 +908,18 @@ def handle_bible_command(args):
             if book_code:
                 last_verse = get_last_verse_in_chapter(book_code, chapter)
                 if last_verse > 0:
-                    text = get_bible_text(book, chapter, 1, chapter, last_verse)
+                    text = get_bible_text(
+                        book, chapter, 1, chapter, last_verse)
                 else:
-                    text = get_bible_text(book, chapter, 1, chapter, 1)  # fallback
+                    text = get_bible_text(
+                        book, chapter, 1, chapter, 1)  # fallback
             else:
-                text = colorize_text(f"Book '{book}' not found.", Colors.DEEP_RED)
+                text = colorize_text(
+                    f"Book '{book}' not found.", Colors.DEEP_RED)
         else:
             # Show specific verses
-            text = get_bible_text(book, chapter, start_verse, chapter, end_verse)
+            text = get_bible_text(
+                book, chapter, start_verse, chapter, end_verse)
         print(text)
     else:
         print(colorize_text("Invalid Bible reference format.", Colors.DEEP_RED))
@@ -878,7 +933,8 @@ def handle_bible_command(args):
 
 def get_random_verse(book_name: str | None = None) -> tuple[str | None, int | None, int | None, int | None, str | None]:
     """Get a random verse from the Bible"""
-    filename_to_code = {bible_filename(name): code for name, code in BOOK_CODES.items()}
+    filename_to_code = {bible_filename(
+        name): code for name, code in BOOK_CODES.items()}
 
     available_codes = []
     if os.path.exists(BIBLE_DIR):
@@ -900,11 +956,11 @@ def get_random_verse(book_name: str | None = None) -> tuple[str | None, int | No
     book_code = random.choice(available_codes)
     book_name = CODE_TO_NAME.get(book_code, book_code)
     json_file = os.path.join(BIBLE_DIR, f"{bible_filename(book_name)}.json")
-    
+
     try:
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-        
+
         # Get all chapters and verses
         all_verses = []
         for chapter_data in data.get("chapters", []):
@@ -912,14 +968,14 @@ def get_random_verse(book_name: str | None = None) -> tuple[str | None, int | No
             for verse_obj in chapter_data.get("verses", []):
                 verse_num = verse_obj.get("verse", 0)
                 all_verses.append((chapter_num, verse_num))
-        
+
         if not all_verses:
             return None, None, None, None, f"No verses found in {book_name}."
-        
+
         # Pick random verse
         chapter, verse = random.choice(all_verses)
         return book_name, chapter, verse, verse, None
-        
+
     except (OSError, json.JSONDecodeError) as e:
         return None, None, None, None, f"Error reading {book_name}: {e}"
 
@@ -927,11 +983,11 @@ def get_random_verse(book_name: str | None = None) -> tuple[str | None, int | No
 def handle_random_verse(book_name=None):
     """Handle random verse command"""
     book_name, chapter, verse, end_verse, error = get_random_verse(book_name)
-    
+
     if error:
         print(colorize_text(error, Colors.DEEP_RED))
         return
-    
+
     text = get_bible_text(book_name, chapter, verse, chapter, verse)
     print(text)
 
@@ -942,18 +998,22 @@ def handle_update():
         # Check internet connectivity
         print(colorize_text("Checking internet connection...", Colors.CYAN))
         try:
-            socket.create_connection(("raw.githubusercontent.com", 443), timeout=5)
+            socket.create_connection(
+                ("raw.githubusercontent.com", 443), timeout=5)
             print(colorize_text("✓ Internet connection available", Colors.GREEN))
         except (socket.error, socket.timeout):
             print(colorize_text("✗ No internet connection available", Colors.DEEP_RED))
-            print(colorize_text("Please check your connection and try again.", Colors.DEEP_RED))
+            print(colorize_text(
+                "Please check your connection and try again.", Colors.DEEP_RED))
             return
-        
+
         # Run the update command
         print(colorize_text("Updating orthofetch...", Colors.CYAN))
-        print(colorize_text("This may take a few minutes as we download the latest version and data files.", Colors.GRAY))
+        print(colorize_text(
+            "This may take a few minutes as we download the latest version and data files.",
+            Colors.GRAY))
         print()
-        
+
         # Execute the one-liner update command
         try:
             with urllib.request.urlopen(
@@ -961,7 +1021,8 @@ def handle_update():
             ) as resp:
                 script_body = resp.read()
         except (urllib.error.URLError, OSError) as e:
-            print(colorize_text(f"✗ Failed to fetch install script: {e}", Colors.DEEP_RED))
+            print(colorize_text(
+                f"✗ Failed to fetch install script: {e}", Colors.DEEP_RED))
             return
 
         try:
@@ -971,32 +1032,42 @@ def handle_update():
                 timeout=600,
             )
         except subprocess.TimeoutExpired:
-            print(colorize_text("✗ Update timed out after 10 minutes.", Colors.DEEP_RED))
+            print(colorize_text(
+                "✗ Update timed out after 10 minutes.", Colors.DEEP_RED))
             return
 
         print()
         if result.returncode == 0:
             print(colorize_text("✓ Update completed successfully!", Colors.GREEN))
-            print(colorize_text("Orthofetch has been updated to the latest version.", Colors.GREEN))
+            print(colorize_text(
+                "Orthofetch has been updated to the latest version.", Colors.GREEN))
         else:
             print(colorize_text("✗ Update failed", Colors.DEEP_RED))
-            print(colorize_text("Please try running the update manually or check the installation.", Colors.DEEP_RED))
+            print(colorize_text(
+                "Please try running the update manually or check the installation.", Colors.DEEP_RED))
 
     except Exception as e:  # last-resort handler for the whole update flow
-        print(colorize_text(f"✗ Unexpected error during update: {str(e)}", Colors.DEEP_RED))
+        print(colorize_text(
+            f"✗ Unexpected error during update: {str(e)}", Colors.DEEP_RED))
 
 
 def main():
     global no_color
-    parser = argparse.ArgumentParser(description="Orthodox Christian calendar fetch tool")
-    parser.add_argument("--reading", type=int, help="Display full text of specific reading number for today")
-    parser.add_argument("--bible", nargs="*", help="Display Bible text: --bible [BOOK] [CHAPTER[:VERSE[-VERSE]]]")
-    parser.add_argument("--random-verse", nargs="?", help="Display random verse: --random-verse [BOOK]")
-    parser.add_argument("--no-color", action="store_true", help="Disable colored output")
-    parser.add_argument("-u", "--update", action="store_true", help="Update orthofetch script and data files")
-    
+    parser = argparse.ArgumentParser(
+        description="Orthodox Christian calendar fetch tool")
+    parser.add_argument("--reading", type=int,
+                        help="Display full text of specific reading number for today")
+    parser.add_argument(
+        "--bible", nargs="*", help="Display Bible text: --bible [BOOK] [CHAPTER[:VERSE[-VERSE]]]")
+    parser.add_argument("--random-verse", nargs="?",
+                        help="Display random verse: --random-verse [BOOK]")
+    parser.add_argument("--no-color", action="store_true",
+                        help="Disable colored output")
+    parser.add_argument("-u", "--update", action="store_true",
+                        help="Update orthofetch script and data files")
+
     args = parser.parse_args()
-    
+
     no_color = args.no_color
 
     if args.reading is not None:
@@ -1018,4 +1089,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

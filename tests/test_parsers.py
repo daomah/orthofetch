@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from orthofetch import bible_filename, parse_reading_reference, parse_bible_reference
+from orthofetch import bible_filename, parse_reading_reference, parse_bible_reference  # noqa: E402
 
 
 class TestBibleFilename(unittest.TestCase):
@@ -77,28 +77,36 @@ class TestParseReadingReference(unittest.TestCase):
 
 class TestParseBibleReference(unittest.TestCase):
     def test_book_only(self):
-        self.assertEqual(parse_bible_reference(["John"]), ("John", None, None, None))
+        self.assertEqual(parse_bible_reference(
+            ["John"]), ("John", None, None, None))
 
     def test_book_and_chapter(self):
-        self.assertEqual(parse_bible_reference(["John", "3"]), ("John", 3, None, None))
+        self.assertEqual(parse_bible_reference(
+            ["John", "3"]), ("John", 3, None, None))
 
     def test_book_chapter_verse(self):
-        self.assertEqual(parse_bible_reference(["John", "3:16"]), ("John", 3, 16, 16))
+        self.assertEqual(parse_bible_reference(
+            ["John", "3:16"]), ("John", 3, 16, 16))
 
     def test_book_chapter_verse_range(self):
-        self.assertEqual(parse_bible_reference(["John", "3:16-17"]), ("John", 3, 16, 17))
+        self.assertEqual(parse_bible_reference(
+            ["John", "3:16-17"]), ("John", 3, 16, 17))
 
     def test_dot_notation(self):
-        self.assertEqual(parse_bible_reference(["John", "3.16-17"]), ("John", 3, 16, 17))
+        self.assertEqual(parse_bible_reference(
+            ["John", "3.16-17"]), ("John", 3, 16, 17))
 
     def test_multiword_book(self):
-        self.assertEqual(parse_bible_reference(["1", "Kings", "3:1"]), ("1 Kings", 3, 1, 1))
+        self.assertEqual(parse_bible_reference(
+            ["1", "Kings", "3:1"]), ("1 Kings", 3, 1, 1))
 
     def test_multiword_book_range(self):
-        self.assertEqual(parse_bible_reference(["1", "Kings", "3:1-5"]), ("1 Kings", 3, 1, 5))
+        self.assertEqual(parse_bible_reference(
+            ["1", "Kings", "3:1-5"]), ("1 Kings", 3, 1, 5))
 
     def test_multiword_book_chapter_only(self):
-        self.assertEqual(parse_bible_reference(["1", "Kings", "3"]), ("1 Kings", 3, None, None))
+        self.assertEqual(parse_bible_reference(
+            ["1", "Kings", "3"]), ("1 Kings", 3, None, None))
 
     def test_three_word_book(self):
         result = parse_bible_reference(["Wisdom", "of", "Solomon", "7:1"])
