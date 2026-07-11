@@ -1,0 +1,40 @@
+---
+# One-time setup per clone: pre-commit install
+# All hooks use system binaries (gitleaks, flake8, shellcheck, markdownlint-cli2, jq).
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: Scan staged changes for secrets
+        entry: gitleaks git --pre-commit --staged --redact
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: flake8
+        name: Lint staged Python
+        entry: flake8
+        language: system
+        files: \.py$
+        stages: [pre-commit]
+
+      - id: shellcheck
+        name: Shellcheck staged shell scripts
+        entry: shellcheck
+        language: system
+        files: \.sh$
+        stages: [pre-commit]
+
+      - id: markdownlint
+        name: Lint staged markdown
+        entry: markdownlint-cli2
+        language: system
+        files: \.md$
+        stages: [pre-commit]
+
+      - id: bible-json
+        name: Validate staged Bible JSON parses
+        entry: jq empty
+        language: system
+        files: \.json$
+        stages: [pre-commit]

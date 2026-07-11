@@ -1,0 +1,11 @@
+// markdownlint config for orthofetch (an Orthodox neofetch-style CLI tool).
+// Read by markdownlint-cli2 (CLI/hook) and the markdownlint VSCodium extension.
+//
+// Strictness follows the repo: keep the content/structure standards enabled and
+// fix violations; disable only the genuinely-cosmetic rules.
+{
+  "default": true,
+
+  "MD013": false, // line-length — prose docs, not hard-wrapped
+  "MD060": false  // table-column-style — hand-maintained tables, cosmetic alignment
+}

@@ -1,0 +1,4 @@
+# Editor-side Python linting (charliermarsh.ruff extension). The pre-commit gate
+# uses flake8 (.flake8); keep both at the same line length so the on-save
+# squiggles and the commit hook never disagree.
+line-length = 120

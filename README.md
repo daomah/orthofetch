@@ -41,13 +41,15 @@ orthofetch --reading [NUM]
 This will give you the full text of a specific reading for today. So if you see [1] John 3.15-18 for example you will get those verses to read.
 
 ### Bible Reading
+
 ```bash
 orthofetch --bible
 ```
 
-This will display all available Bible books organized by testament. 
+This will display all available Bible books organized by testament.
 
 **Updated Command Features:**
+
 - **Multi-word book support**: `--bible "1 Kings" 3.1-5` works perfectly
 - **Format flexibility**: Supports both dot (`3.1-5`) and colon (`3:1-5`) verse references
 - **Complete reference options**: Single verse, verse ranges, full chapters
@@ -118,13 +120,15 @@ python3 -m unittest discover -s tests -v
 ---
 
 ## Data
-- 
-Books come from the JSON files from [l1lsm0k13's AncientBible project](https://l1lsm0k13.github.io/AncientBible/).
 
+-
+
+Books come from the JSON files from [l1lsm0k13's AncientBible project](https://l1lsm0k13.github.io/AncientBible/).
 
 Calendar comes from [orthocal](https://orthocal.info/).
 
 :)
+
 ---
 
 ## License
