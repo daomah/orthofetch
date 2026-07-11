@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 BIN_DIR="$HOME/.local/bin"
@@ -29,7 +29,7 @@ mkdir -p "$BIBLE_DIR"
 # Check for old folder-based structure and remove it if exists
 if [ -d "$BIBLE_DIR/GEN" ] || [ -d "$BIBLE_DIR/EXO" ] || [ -d "$BIBLE_DIR/LEV" ]; then
     echo "Found old folder-based Bible structure, removing..."
-    rm -rf "$BIBLE_DIR"/*
+    rm -rf "${BIBLE_DIR:?}"/*
     echo "Old structure removed."
 fi
 
@@ -38,7 +38,6 @@ echo ""
 
 # Function to download Bible books as JSON files
 download_bible_book() {
-    local book_code=$1
     local book_name=$2
     local json_filename=$3
     local url="https://raw.githubusercontent.com/daomah/orthofetch/main/data/bible/$json_filename"
