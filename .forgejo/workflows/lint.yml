@@ -1,0 +1,68 @@
+# Runs the same pre-commit gate the workstation runs, on ci01.
+#
+# Local hooks are the fast path and SHOULD stay skippable; this is the backstop.
+# They only protect commits on a machine where someone ran `pre-commit install`,
+# and `--no-verify` bypasses them by design.
+#
+# ⚠️ This repo has an OUTSIDE CONTRIBUTOR, which the others do not. Their work
+# arrives on GitHub, where these workflows do not run — so this gate covers what
+# lands here, not everything that lands anywhere. Do not read a green run as
+# proof the GitHub copy is clean.
+name: lint
+# ⚠️ QUOTED DELIBERATELY. `on` is a YAML 1.1 boolean, so unquoted it parses as
+# `true:`. Harmless to Forgejo, but ansible-lint rejects it in the repos that
+# run that hook — keep the workflows identical in shape.
+"on": [push, pull_request]
+
+env:
+  # Pinned to what the workstation runs, so CI enforces the same thing rather
+  # than whatever upstream released this morning.
+  # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.*)$
+  GITLEAKS_VERSION: "8.30.1"
+  # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.*)$
+  SHELLCHECK_VERSION: "0.11.0"
+  # renovate: datasource=pypi depName=flake8
+  FLAKE8_VERSION: "7.3.0"
+
+jobs:
+  pre-commit:
+    runs-on: docker
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          # gitleaks needs history to scan, not just the tip commit.
+          fetch-depth: 0
+
+      - name: Install the hook toolchain
+        run: |
+          set -euo pipefail
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends python3-pip unzip xz-utils jq >/dev/null
+          npm install -g markdownlint-cli2 --silent
+          # ⚠️ shellcheck is pinned rather than taken from apt. Debian ships an
+          # older release whose SC2015 heuristic fires where 0.11.0 does not, so
+          # an unpinned CI enforces a different standard than the workstation
+          # and fails on code that is fine.
+          curl -sSL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+            | tar -xJ --strip-components=1 -C /usr/local/bin "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          pip install --break-system-packages --quiet "flake8==${FLAKE8_VERSION}" pre-commit
+
+      - name: Run the pre-commit gate
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      # ⚠️ NOT redundant with the gitleaks hook above. That hook is
+      # `gitleaks git --pre-commit --staged`, which is correct locally and scans
+      # NOTHING in CI, because CI has no staged changes — it would pass
+      # vacuously on the one hook that matters most.
+      - name: Scan the working tree for secrets
+        run: gitleaks dir . --redact --verbose
+
+      - name: Scan history for NEW secrets
+        run: |
+          if [ -f .gitleaks-baseline.json ]; then
+            gitleaks git . --redact --verbose --baseline-path .gitleaks-baseline.json
+          else
+            gitleaks git . --redact --verbose
+          fi

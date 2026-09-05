@@ -1,0 +1,51 @@
+# Replicate main to GitHub the moment it changes here.
+#
+# ⚠️ THIS IS THE sync-codeberg.yml PATTERN WITH A DIFFERENT REPLICA, and the
+# difference is not cosmetic. Every other forgejo01-primary repo replicates to
+# Codeberg; this one replicates to GitHub, because GitHub is where this repo has
+# always lived and where its outside contributor works (ADR 0018).
+#
+# ⚠️ THE SECRET CANNOT BE CALLED GITHUB_TOKEN. Forgejo reserves the `GITHUB_`
+# secret-name prefix, and a secret created with it is silently unavailable
+# rather than rejected — the job fails as though the credential were wrong.
+# Hence GH_TOKEN.
+#
+# ⚠️ NOT `--mirror`, and that distinction is the whole reason this is allowed.
+# ADR 0018 rejected Forgejo's push mirror because `git push --mirror` overwrites
+# the remote. This is a plain fast-forward push: if GitHub has commits this does
+# not, the push FAILS and the job goes red. It can fall behind; it cannot
+# clobber.
+#
+# ⚠️ FALLING BEHIND IS LIKELY HERE, NOT THEORETICAL. A pull request merged on
+# GitHub by or from the outside contributor puts GitHub ahead, and this job will
+# then go red on the next push rather than silently reconciling. That is the
+# intended behaviour: reconcile by pulling from GitHub, do not force.
+name: sync-github
+# ⚠️ QUOTED DELIBERATELY. `on` is a YAML 1.1 boolean; unquoted it parses as
+# `true:` and ansible-lint rejects it in the repos running that hook.
+"on":
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: docker
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          # A shallow clone cannot be pushed as a fast-forward.
+          fetch-depth: 0
+
+      - name: Replicate main to GitHub
+        run: |
+          set -euo pipefail
+          # ⚠️ The token goes through a credential helper, NOT into the remote
+          # URL. A URL-embedded token is echoed by git in error output, so a
+          # failed push would print the credential into the job log.
+          git config --global credential.helper \
+            '!f() { echo username=daomah; echo "password=${GH_TOKEN}"; }; f'
+          git push "https://github.com/${FORGE_REPO}.git" HEAD:refs/heads/main
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          FORGE_REPO: ${{ github.repository }}
