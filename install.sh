@@ -7,17 +7,34 @@ DATA_DIR="$HOME/.local/share/orthofetch"
 mkdir -p "$BIN_DIR"
 mkdir -p "$DATA_DIR"
 
+# Download a URL to a destination atomically: a dropped connection never leaves a truncated file behind.
+fetch() {
+    local url=$1 dest=$2 tmp
+    tmp=$(mktemp "${dest}.XXXXXX") || return 1
+    if curl -fsSL "$url" -o "$tmp" && [ -s "$tmp" ]; then
+        mv "$tmp" "$dest"
+    else
+        rm -f "$tmp"
+        return 1
+    fi
+}
+
+FAILED=0
+
 # Download main script (always update to get latest version)
 echo "Downloading orthofetch script..."
-curl -fsSL https://raw.githubusercontent.com/daomah/orthofetch/main/orthofetch.py -o "$BIN_DIR/orthofetch"
+fetch https://raw.githubusercontent.com/daomah/orthofetch/main/orthofetch.py "$BIN_DIR/orthofetch"
 chmod +x "$BIN_DIR/orthofetch"
 
-# Download calendar data if not exists
+# Download calendar data if not exists (set ORTHOFETCH_FORCE=1 to re-download existing data)
 YEAR=$(date +%Y)
 CAL_FILE="orthodox_calendar_${YEAR}.txt"
-if [ ! -f "$DATA_DIR/$CAL_FILE" ]; then
+if [ ! -f "$DATA_DIR/$CAL_FILE" ] || [ -n "${ORTHOFETCH_FORCE:-}" ]; then
     echo "Downloading calendar data for ${YEAR}..."
-    curl -fsSL "https://raw.githubusercontent.com/daomah/orthofetch/main/data/${CAL_FILE}" -o "$DATA_DIR/$CAL_FILE"
+    if ! fetch "https://raw.githubusercontent.com/daomah/orthofetch/main/data/${CAL_FILE}" "$DATA_DIR/$CAL_FILE"; then
+        echo "  ✗ Failed to download calendar data for ${YEAR}"
+        FAILED=$((FAILED + 1))
+    fi
 else
     echo "Calendar data already exists, skipping download."
 fi
@@ -44,22 +61,22 @@ download_bible_book() {
     local file="$BIBLE_DIR/$json_filename"
     
     # Check if file already exists
-    if [ -f "$file" ]; then
+    if [ -f "$file" ] && [ -z "${ORTHOFETCH_FORCE:-}" ]; then
         echo "  ✓ $book_name (already exists)"
         return
     fi
     
     # Try to download the JSON file
-    if curl -fsSL "$url" -o "$file" 2>/dev/null; then
+    if fetch "$url" "$file" 2>/dev/null; then
         echo "  ✓ $book_name"
     else
         echo "  ✗ Failed to download $book_name"
-        rm -f "$file"  # Remove empty file if download failed
+        FAILED=$((FAILED + 1))
     fi
 }
 
 echo "Starting Bible data download..."
-echo "This may take a few minutes as we download 73 Bible books..."
+echo "This may take a few minutes as we download the Bible books..."
 echo ""
 
 # Download all Bible JSON files
@@ -137,18 +154,20 @@ download_bible_book "JDT" "Judith" "judith.json"
 download_bible_book "WIS" "Wisdom of Solomon" "wisdom.json"
 download_bible_book "SIR" "Sirach" "sirach.json"
 download_bible_book "BAR" "Baruch" "baruch.json"
+download_bible_book "LJE" "Epistle of Jeremiah" "epistle.json"
 download_bible_book "1MA" "1 Maccabees" "1maccabees.json"
 download_bible_book "2MA" "2 Maccabees" "2maccabees.json"
-
-# Download additional deuterocanonical books
 download_bible_book "3MA" "3 Maccabees" "3maccabees.json"
 download_bible_book "4MA" "4 Maccabees" "4maccabees.json"
-download_bible_book "ESG" "Esther (Greek)" "esther_greek.json"
-download_bible_book "P151" "Psalm 151" "psalm151.json"
-download_bible_book "MAN" "Prayer of Manasseh" "manasseh.json"
+# Not yet published in data/bible (esther_greek.json, psalm151.json, manasseh.json); re-add once they exist.
 
 echo ""
 echo "[*] Installation complete!"
 echo "Run 'orthofetch' from anywhere."
 echo "Orthofetch script installed to $BIN_DIR."
 echo "Data installed to $DATA_DIR."
+
+if [ "$FAILED" -gt 0 ]; then
+    echo "[!] $FAILED download(s) failed; re-run the installer to retry." >&2
+    exit 1
+fi

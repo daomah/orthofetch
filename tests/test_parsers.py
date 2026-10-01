@@ -6,7 +6,10 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from orthofetch import bible_filename, parse_reading_reference, parse_bible_reference  # noqa: E402
+from orthofetch import (  # noqa: E402
+    bible_filename, clean_readings, normalize_kings, normalize_reference, parse_bible_reference,
+    parse_multi_reference, parse_reading_reference, resolve_book,
+)
 
 
 class TestBibleFilename(unittest.TestCase):
@@ -35,7 +38,7 @@ class TestBibleFilename(unittest.TestCase):
         self.assertEqual(bible_filename("Psalms"), "psalms")
 
     def test_psalm_151(self):
-        self.assertEqual(bible_filename("Psalm 151"), "psalm_151")
+        self.assertEqual(bible_filename("Psalm 151"), "psalm151")
 
 
 class TestParseReadingReference(unittest.TestCase):
@@ -73,6 +76,49 @@ class TestParseReadingReference(unittest.TestCase):
 
     def test_invalid_returns_none(self):
         self.assertIsNone(parse_reading_reference("not a reference"))
+
+    def test_spaced_bracket_kings(self):
+        result = parse_reading_reference("3 [1] Kings 17.1-23")
+        self.assertEqual(result, ("1 Kings", 17, 1, 17, 23))
+
+    def test_single_chapter_book_range(self):
+        self.assertEqual(parse_reading_reference("Jude 1-10"), ("Jude", 1, 1, 1, 10))
+
+    def test_noncontiguous_chapters_not_a_range(self):
+        self.assertIsNone(parse_reading_reference("Exodus 12, 14"))
+
+
+class TestHelpers(unittest.TestCase):
+    def test_resolve_book_case_and_alias(self):
+        self.assertEqual(resolve_book("john"), "John")
+        self.assertEqual(resolve_book("PSALM"), "Psalms")
+        self.assertEqual(resolve_book("1 kings"), "1 Kings")
+        self.assertIsNone(resolve_book("nonsense"))
+
+    def test_normalize_kings(self):
+        self.assertEqual(normalize_kings("4 [2] Kings 2.1"), "2 Kings 2.1")
+
+    def test_clean_readings(self):
+        text = "Composite 1 - Genesis 1.1-5; 3 [1] Kings 18, 19 • John 1.1-5"
+        self.assertEqual(clean_readings(text), ["Genesis 1.1-5", "1 Kings 18, 19", "John 1.1-5"])
+
+    def test_clean_readings_bookless_continuation_and_zero_width(self):
+        text = "\u200bComposite 19 - Micah 4.2-3, 5; 6.2-5, 8 • John 1.1-5"
+        self.assertEqual(clean_readings(text), ["Micah 4.2-3, 5", "Micah 6.2-5, 8", "John 1.1-5"])
+
+    def test_normalize_reference(self):
+        self.assertEqual(normalize_reference("Job 42.12-17 (LXX)"), "Job 42.12-17")
+        self.assertEqual(normalize_reference("Jeremiah (Baruch 3.35-4.4)"), "Baruch 3.35-4.4")
+
+    def test_verse_to_next_chapter_part(self):
+        self.assertEqual(parse_multi_reference("Luke 22.39-42, 45-23.1")[1], ("Luke", 22, 45, 23, 1))
+
+    def test_parse_multi_reference(self):
+        self.assertEqual(parse_multi_reference("Genesis 17.1-2, 4, 5-7"),
+                         [("Genesis", 17, 1, 17, 2), ("Genesis", 17, 4, 17, 4), ("Genesis", 17, 5, 17, 7)])
+        self.assertEqual(parse_multi_reference("Luke 2.20-21, 40-52")[1], ("Luke", 2, 40, 2, 52))
+        with self.assertRaises(ValueError):
+            parse_multi_reference("garbage, 4")
 
 
 class TestParseBibleReference(unittest.TestCase):
@@ -114,6 +160,12 @@ class TestParseBibleReference(unittest.TestCase):
 
     def test_empty_args(self):
         self.assertEqual(parse_bible_reference([]), (None, None, None, None))
+
+    def test_case_insensitive_book(self):
+        self.assertEqual(parse_bible_reference(["john", "3:16"]), ("John", 3, 16, 16))
+
+    def test_single_chapter_book_range(self):
+        self.assertEqual(parse_bible_reference(["Jude", "1-10"]), ("Jude", 1, 1, 10))
 
     def test_invalid_chapter(self):
         result = parse_bible_reference(["John", "notanumber"])

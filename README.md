@@ -51,6 +51,8 @@ This will display all available Bible books organized by testament.
 **Updated Command Features:**
 
 - **Multi-word book support**: `--bible "1 Kings" 3.1-5` works perfectly
+- **Forgiving book names**: case-insensitive, with aliases (`--bible psalm 23`, `--bible john 3:16`); quoting multi-word names is optional
+- **Cross-chapter and single-chapter references**: `--bible Job 2:13-4:3`, `--bible Jude 1-10`
 - **Format flexibility**: Supports both dot (`3.1-5`) and colon (`3:1-5`) verse references
 - **Complete reference options**: Single verse, verse ranges, full chapters
 - **Deuterocanonical support**: `--bible "4 Maccabees"` and all deuterocanonical books
@@ -134,3 +136,9 @@ Calendar comes from [orthocal](https://orthocal.info/).
 ## License
 
 BSD 2-Clause
+
+## Configuration
+
+- `ORTHOFETCH_DATA`: directory holding `orthodox_calendar_YEAR.txt` and `bible/` (default: `data/` next to the script, else `~/.local/share/orthofetch`).
+- `NO_COLOR`: disables colour; colour is also disabled automatically when output is not a terminal.
+- `ORTHOFETCH_FORCE=1`: make the installer re-download data files that already exist.
