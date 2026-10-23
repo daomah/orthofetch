@@ -37,7 +37,12 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update -qq
-          apt-get install -y -qq --no-install-recommends python3-pip unzip xz-utils jq >/dev/null
+          # ⚠️ python3-venv IS REQUIRED, not optional. This image ships no
+          # ensurepip, so without it `python3 -m venv` fails with a message
+          # naming python3.13-venv that reads like a missing interpreter rather
+          # than a missing package.
+          apt-get install -y -qq --no-install-recommends \
+            python3-pip python3-venv unzip xz-utils jq >/dev/null
           npm install -g markdownlint-cli2 --silent
           # ⚠️ shellcheck is pinned rather than taken from apt. Debian ships an
           # older release whose SC2015 heuristic fires where 0.11.0 does not, so
@@ -47,7 +52,33 @@ jobs:
             | tar -xJ --strip-components=1 -C /usr/local/bin "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             | tar -xz -C /usr/local/bin gitleaks
-          pip install --break-system-packages --quiet "flake8==${FLAKE8_VERSION}" pre-commit
+          # ⚠️ A VENV, NOT `pip --break-system-packages`, AND THIS IS NOT A
+          # STYLE PREFERENCE — the old form stopped working entirely.
+          #
+          # `apt-get install python3-pip` pulls Debian's dpkg-managed
+          # python3-packaging (25.0 on trixie). pre-commit's dependency tree now
+          # wants packaging newer than that, so pip tried to replace the
+          # dpkg-installed copy, found no RECORD file, and aborted:
+          #
+          #   error: uninstall-no-record-file
+          #   Cannot uninstall packaging 25.0
+          #   The package's contents are unknown: no RECORD file was found
+          #
+          # ⚠️ `pre-commit` ALONE is enough to trigger this — verified in this
+          # exact image with no other package. Every lint.yml in the estate shared
+          # this pattern, so all thirteen were fixed together rather than as each
+          # repo's next push went red.
+          #
+          # ⚠️ THE VERSION PINS DID NOT PREVENT IT. They pin the tools a repo
+          # names; `packaging` is a transitive dependency of pre-commit and floats.
+          # The fix is isolation from dpkg, not pinning more of the tree.
+          python3 -m venv /opt/hooks
+          /opt/hooks/bin/pip install --quiet "flake8==${FLAKE8_VERSION}" pre-commit
+          # ⚠️ $GITHUB_PATH, not `export PATH`. The pre-commit hooks are
+          # `language: system` and run in LATER steps; an export dies with this
+          # shell and they would resolve the system python with none of this
+          # installed.
+          echo /opt/hooks/bin >> "$GITHUB_PATH"
 
       - name: Run the pre-commit gate
         run: pre-commit run --all-files --show-diff-on-failure
